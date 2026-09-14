@@ -27,14 +27,16 @@ function escapeHtml(value = '') {
 function matchesAny(value, terms) {
     if (!terms.length) return true;
 
-    const normalizedValue = value.toLowerCase();
-    return terms.some((term) => normalizedValue.includes(term.toLowerCase()));
+    const normalizedValue = String(value).toLowerCase();
+    return terms.some((term) => normalizedValue.includes(String(term).toLowerCase()));
 }
 
 function createBloggerHtml(job) {
     const details = [
         ['Company', job.company],
         ['Location', job.location],
+        ['Employment type', job.job_type],
+        ['Experience level', job.experience_level],
         ['Department', job.department],
         ['Last updated', job.source_updated_at],
     ].filter(([, value]) => value);
@@ -56,10 +58,37 @@ function createBloggerHtml(job) {
     ].join('\n');
 }
 
+function smartRecruitersDescription(jobDetails) {
+    const sections = jobDetails.jobAd?.sections ?? {};
+
+    return Object.values(sections)
+        .map((section) => {
+            if (typeof section === 'string') return section;
+            if (section && typeof section === 'object') {
+                return section.text ?? section.content ?? '';
+            }
+            return '';
+        })
+        .join(' ');
+}
+
+function isRelevantJob(title, location, targetLocations, keywords, collectAllLocations) {
+    if (!collectAllLocations && !matchesAny(location, targetLocations)) {
+        return false;
+    }
+
+    if (keywords.length && !matchesAny(`${title} ${location}`, keywords)) {
+        return false;
+    }
+
+    return true;
+}
+
 try {
     const input = (await Actor.getInput()) ?? {};
 
     const greenhouseBoards = input.greenhouseBoards ?? [];
+    const smartRecruitersCompanies = input.smartRecruitersCompanies ?? [];
     const targetLocations = input.targetLocations ?? [
         'Tamil Nadu',
         'Chennai',
@@ -75,8 +104,8 @@ try {
     const maxJobsPerBoard = input.maxJobsPerBoard ?? 25;
     const collectAllLocations = input.collectAllLocations === true;
 
-    if (!greenhouseBoards.length) {
-        throw new Error('Add at least one Greenhouse board in the actor input.');
+    if (!greenhouseBoards.length && !smartRecruitersCompanies.length) {
+        throw new Error('Add at least one Greenhouse board or SmartRecruiters company.');
     }
 
     let collectedJobs = 0;
@@ -104,11 +133,10 @@ try {
         for (const sourceJob of jobs) {
             const title = cleanText(sourceJob.title);
             const location = cleanText(sourceJob.location?.name);
-            const description = cleanText(sourceJob.content);
-            const searchableText = `${title} ${location}`;
 
-            if (!collectAllLocations && !matchesAny(location, targetLocations)) continue;
-            if (keywords.length && !matchesAny(searchableText, keywords)) continue;
+            if (!isRelevantJob(title, location, targetLocations, keywords, collectAllLocations)) {
+                continue;
+            }
 
             const job = {
                 job_key: `greenhouse:${token}:${sourceJob.id}`,
@@ -120,7 +148,7 @@ try {
                 experience_level: null,
                 salary: null,
                 department: cleanText(sourceJob.departments?.map((item) => item.name).join(', ')),
-                description,
+                description: cleanText(sourceJob.content),
                 requirements: [],
                 apply_url: sourceJob.absolute_url,
                 source_url: sourceJob.absolute_url,
@@ -133,13 +161,89 @@ try {
             };
 
             job.blogger_html = createBloggerHtml(job);
-
             await Actor.pushData(job);
             collectedJobs += 1;
         }
     }
 
-    console.log(`Collected ${collectedJobs} matching Greenhouse jobs.`);
+    for (const source of smartRecruitersCompanies) {
+        const identifier = source.identifier?.trim();
+        const configuredCompany = source.company?.trim() || identifier;
+
+        if (!identifier) {
+            console.warn('Skipping a SmartRecruiters company without an identifier.');
+            continue;
+        }
+
+        const listUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(identifier)}/postings?limit=${maxJobsPerBoard}`;
+        const listResponse = await fetch(listUrl);
+
+        if (!listResponse.ok) {
+            console.warn(`Could not load ${configuredCompany}: ${listResponse.status} ${listResponse.statusText}`);
+            continue;
+        }
+
+        const listData = await listResponse.json();
+        const postings = Array.isArray(listData.content) ? listData.content : [];
+
+        for (const posting of postings) {
+            const postingId = posting.id ?? posting.postingId;
+            const title = cleanText(posting.name ?? posting.title);
+            const location = cleanText([
+                posting.location?.city,
+                posting.location?.region,
+                posting.location?.country,
+            ].filter(Boolean).join(', '));
+
+            if (!postingId || !isRelevantJob(title, location, targetLocations, keywords, collectAllLocations)) {
+                continue;
+            }
+
+            let details = {};
+
+            try {
+                const detailsUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(identifier)}/postings/${encodeURIComponent(postingId)}`;
+                const detailsResponse = await fetch(detailsUrl);
+
+                if (detailsResponse.ok) {
+                    details = await detailsResponse.json();
+                } else {
+                    console.warn(`Could not load details for ${configuredCompany} job ${postingId}.`);
+                }
+            } catch (error) {
+                console.warn(`Could not load details for ${configuredCompany} job ${postingId}: ${error.message}`);
+            }
+
+            const company = cleanText(posting.company?.name ?? configuredCompany);
+            const job = {
+                job_key: `smartrecruiters:${identifier}:${postingId}`,
+                title,
+                company,
+                location,
+                remote_status: location.toLowerCase().includes('remote') ? 'Remote' : 'Not specified',
+                job_type: cleanText(posting.typeOfEmployment?.label ?? details.typeOfEmployment?.label),
+                experience_level: cleanText(posting.experienceLevel?.label ?? details.experienceLevel?.label),
+                salary: null,
+                department: cleanText(posting.department?.label ?? details.department?.label),
+                description: cleanText(smartRecruitersDescription(details)),
+                requirements: [],
+                apply_url: `https://jobs.smartrecruiters.com/${encodeURIComponent(identifier)}/${encodeURIComponent(postingId)}`,
+                source_url: `https://jobs.smartrecruiters.com/${encodeURIComponent(identifier)}/${encodeURIComponent(postingId)}`,
+                source_name: `SmartRecruiters - ${company}`,
+                source_type: 'Direct employer',
+                source_job_id: String(postingId),
+                source_updated_at: posting.releasedDate ?? details.releasedDate ?? null,
+                posted_at: posting.releasedDate ?? details.releasedDate ?? null,
+                scraped_at: new Date().toISOString(),
+            };
+
+            job.blogger_html = createBloggerHtml(job);
+            await Actor.pushData(job);
+            collectedJobs += 1;
+        }
+    }
+
+    console.log(`Collected ${collectedJobs} matching jobs.`);
 } finally {
     await Actor.exit();
 }
