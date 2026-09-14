@@ -12,6 +12,13 @@
       "editor": "json",
       "prefill": []
     },
+    "smartRecruitersCompanies": {
+  "title": "SmartRecruiters companies",
+  "type": "array",
+  "description": "Add company identifiers as JSON. Example: [{\"identifier\":\"Freshworks\",\"company\":\"Freshworks\"}]",
+  "editor": "json",
+  "prefill": []
+},
     "targetLocations": {
       "title": "Target locations",
       "type": "array",
