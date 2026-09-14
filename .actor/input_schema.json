@@ -1,25 +1,51 @@
 {
-    "$schema": "https://apify.com/schemas/v1/input.ide.json",
-    "title": "CheerioCrawler Template",
-    "type": "object",
-    "schemaVersion": 1,
-    "properties": {
-        "startUrls": {
-            "title": "Start URLs",
-            "type": "array",
-            "description": "URLs to start with.",
-            "editor": "requestListSources",
-            "prefill": [
-                {
-                    "url": "https://crawlee.dev"
-                }
-            ]
-        },
-        "maxRequestsPerCrawl": {
-            "title": "Max Requests per Crawl",
-            "type": "integer",
-            "description": "Maximum number of requests that can be made by this crawler.",
-            "default": 100
-        }
+  "$schema": "https://apify.com/schemas/v1/input.json",
+  "title": "TN India Job Collector",
+  "description": "Collects Tamil Nadu and India-relevant jobs from public Greenhouse career feeds.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "greenhouseBoards": {
+      "title": "Greenhouse company boards",
+      "type": "array",
+      "description": "Add company board tokens as JSON. Example: [{\"token\":\"company-token\",\"company\":\"Company Name\"}]",
+      "editor": "json",
+      "prefill": []
+    },
+    "targetLocations": {
+      "title": "Target locations",
+      "type": "array",
+      "description": "Only jobs whose listed location contains one of these values will be collected.",
+      "editor": "stringList",
+      "prefill": [
+        "Tamil Nadu",
+        "Chennai",
+        "Coimbatore",
+        "Madurai",
+        "Tiruchirappalli",
+        "Hosur",
+        "Salem",
+        "Tirunelveli",
+        "India"
+      ]
+    },
+    "keywords": {
+      "title": "Job keywords",
+      "type": "array",
+      "description": "Leave empty to collect every job matching the target locations. Add role keywords later to narrow results.",
+      "editor": "stringList",
+      "prefill": []
+    },
+    "maxJobsPerBoard": {
+      "title": "Maximum jobs per company",
+      "type": "integer",
+      "description": "Limits the number of jobs read from each company board in one run.",
+      "default": 25,
+      "minimum": 1,
+      "maximum": 100
     }
+  },
+  "required": [
+    "greenhouseBoards"
+  ]
 }
