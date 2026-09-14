@@ -175,7 +175,7 @@ try {
             continue;
         }
 
-        const listUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(identifier)}/postings?limit=${maxJobsPerBoard}`;
+        const listUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(identifier)}/postings?limit=100&country=IN`;
         const listResponse = await fetch(listUrl);
 
         if (!listResponse.ok) {
@@ -184,7 +184,9 @@ try {
         }
 
         const listData = await listResponse.json();
-        const postings = Array.isArray(listData.content) ? listData.content : [];
+        const postings = Array.isArray(listData.content)
+    ? listData.content.slice(0, maxJobsPerBoard)
+    : [];
 
         for (const posting of postings) {
             const postingId = posting.id ?? posting.postingId;
