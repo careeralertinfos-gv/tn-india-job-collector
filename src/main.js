@@ -67,6 +67,7 @@ try {
     ];
     const keywords = input.keywords ?? [];
     const maxJobsPerBoard = input.maxJobsPerBoard ?? 25;
+    const collectAllLocations = input.collectAllLocations === true;
 
     if (!greenhouseBoards.length) {
         throw new Error('Add at least one Greenhouse board in the actor input.');
@@ -100,7 +101,7 @@ try {
             const description = cleanText(sourceJob.content);
             const searchableText = `${title} ${location}`;
 
-            if (!matchesAny(location, targetLocations)) continue;
+            if (!collectAllLocations && !matchesAny(location, targetLocations)) continue;
             if (keywords.length && !matchesAny(searchableText, keywords)) continue;
 
             const job = {
