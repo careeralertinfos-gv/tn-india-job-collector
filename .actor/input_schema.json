@@ -29,6 +29,12 @@
         "India"
       ]
     },
+    "collectAllLocations": {
+  "title": "Collect all locations",
+  "type": "boolean",
+  "description": "Use only for testing a source. When enabled, location filtering is skipped.",
+  "default": false
+},
     "keywords": {
       "title": "Job keywords",
       "type": "array",
