@@ -1,30 +1,138 @@
-// Crawlee - web scraping and browser automation library (Read more at https://crawlee.dev)
-import { CheerioCrawler } from '@crawlee/cheerio';
-// Apify SDK - toolkit for building Apify Actors (Read more at https://docs.apify.com/sdk/js/)
 import { Actor } from 'apify';
 
-// this is ESM project, and as such, it requires you to specify extensions in your relative imports
-// read more about this here: https://nodejs.org/docs/latest-v18.x/api/esm.html#mandatory-file-extensions
-import { router } from './routes.js';
-
-// The init() call configures the Actor to correctly work with the Apify-provided environment - mainly the storage infrastructure. It is necessary that every Actor performs an init() call.
 await Actor.init();
 
-// Structure of input is defined in input_schema.json
-const { startUrls = ['https://apify.com'], maxRequestsPerCrawl = 100 } = (await Actor.getInput()) ?? {};
+function cleanText(value = '') {
+    return value
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
 
-// Proxy configuration to rotate IP addresses and prevent blocking (https://docs.apify.com/platform/proxy)
-// `checkAccess` flag ensures the proxy credentials are valid, but the check can take a few hundred milliseconds.
-// Disable it for short runs if you are sure your proxy configuration is correct
-const proxyConfiguration = await Actor.createProxyConfiguration({ checkAccess: true });
+function escapeHtml(value = '') {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
-const crawler = new CheerioCrawler({
-    proxyConfiguration,
-    maxRequestsPerCrawl,
-    requestHandler: router,
-});
+function matchesAny(value, terms) {
+    if (!terms.length) return true;
 
-await crawler.run(startUrls);
+    const normalizedValue = value.toLowerCase();
+    return terms.some((term) => normalizedValue.includes(term.toLowerCase()));
+}
 
-// Gracefully exit the Actor process. It's recommended to quit all Actors with an exit()
-await Actor.exit();
+function createBloggerHtml(job) {
+    const details = [
+        ['Company', job.company],
+        ['Location', job.location],
+        ['Department', job.department],
+        ['Last updated', job.source_updated_at],
+    ].filter(([, value]) => value);
+
+    const detailHtml = details
+        .map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value)}</p>`)
+        .join('');
+
+    const descriptionHtml = job.description
+        ? `<h3>Job description</h3><p>${escapeHtml(job.description)}</p>`
+        : '';
+
+    return [
+        `<h2>${escapeHtml(job.title)}</h2>`,
+        detailHtml,
+        descriptionHtml,
+        `<p><a href="${escapeHtml(job.apply_url)}" rel="nofollow">Apply on the company careers page</a></p>`,
+        `<p><small>Source: ${escapeHtml(job.source_name)}</small></p>`,
+    ].join('\n');
+}
+
+try {
+    const input = (await Actor.getInput()) ?? {};
+
+    const greenhouseBoards = input.greenhouseBoards ?? [];
+    const targetLocations = input.targetLocations ?? [
+        'Tamil Nadu',
+        'Chennai',
+        'Coimbatore',
+        'Madurai',
+        'Tiruchirappalli',
+        'Hosur',
+        'Salem',
+        'Tirunelveli',
+        'India',
+    ];
+    const keywords = input.keywords ?? [];
+    const maxJobsPerBoard = input.maxJobsPerBoard ?? 25;
+
+    if (!greenhouseBoards.length) {
+        throw new Error('Add at least one Greenhouse board in the actor input.');
+    }
+
+    let collectedJobs = 0;
+
+    for (const board of greenhouseBoards) {
+        const token = board.token?.trim();
+        const company = board.company?.trim() || token;
+
+        if (!token) {
+            console.warn('Skipping a Greenhouse board without a token.');
+            continue;
+        }
+
+        const apiUrl = `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(token)}/jobs?content=true`;
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+            console.warn(`Could not load ${company}: ${response.status} ${response.statusText}`);
+            continue;
+        }
+
+        const data = await response.json();
+        const jobs = Array.isArray(data.jobs) ? data.jobs.slice(0, maxJobsPerBoard) : [];
+
+        for (const sourceJob of jobs) {
+            const title = cleanText(sourceJob.title);
+            const location = cleanText(sourceJob.location?.name);
+            const description = cleanText(sourceJob.content);
+            const searchableText = `${title} ${location}`;
+
+            if (!matchesAny(location, targetLocations)) continue;
+            if (keywords.length && !matchesAny(searchableText, keywords)) continue;
+
+            const job = {
+                job_key: `greenhouse:${token}:${sourceJob.id}`,
+                title,
+                company,
+                location,
+                remote_status: location.toLowerCase().includes('remote') ? 'Remote' : 'Not specified',
+                job_type: null,
+                experience_level: null,
+                salary: null,
+                department: cleanText(sourceJob.departments?.map((item) => item.name).join(', ')),
+                description,
+                requirements: [],
+                apply_url: sourceJob.absolute_url,
+                source_url: sourceJob.absolute_url,
+                source_name: `Greenhouse - ${company}`,
+                source_type: 'Direct employer',
+                source_job_id: String(sourceJob.id),
+                source_updated_at: sourceJob.updated_at ?? null,
+                posted_at: null,
+                scraped_at: new Date().toISOString(),
+            };
+
+            job.blogger_html = createBloggerHtml(job);
+
+            await Actor.pushData(job);
+            collectedJobs += 1;
+        }
+    }
+
+    console.log(`Collected ${collectedJobs} matching Greenhouse jobs.`);
+} finally {
+    await Actor.exit();
+}
