@@ -192,12 +192,14 @@ try {
         for (const posting of postings) {
             const postingId = posting.id ?? posting.postingId;
             const title = cleanText(posting.name ?? posting.title);
-            const location = cleanText([
-                posting.location?.city,
-                posting.location?.region,
-                posting.location?.country,
-            ].filter(Boolean).join(', '));
+            const countryCode = cleanText(posting.location?.country);
+const country = countryCode.toLowerCase() === 'in' ? 'India' : countryCode;
 
+const location = cleanText([
+    posting.location?.city,
+    posting.location?.region,
+    country,
+].filter(Boolean).join(', '));
             if (!postingId || !isRelevantJob(title, location, targetLocations, keywords, collectAllLocations)) {
                 continue;
             }
