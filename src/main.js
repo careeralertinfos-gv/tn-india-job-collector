@@ -175,7 +175,7 @@ try {
             continue;
         }
 
-        const listUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(identifier)}/postings?limit=100&country=IN`;
+        const listUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(identifier)}/postings?limit=100`;
         const listResponse = await fetch(listUrl);
 
         if (!listResponse.ok) {
@@ -184,10 +184,11 @@ try {
         }
 
         const listData = await listResponse.json();
-        const postings = Array.isArray(listData.content)
-    ? listData.content.slice(0, maxJobsPerBoard)
-    : [];
+        const postings = Array.isArray(listData.content) ? listData.content : [];
 
+        console.log(`${configuredCompany}: response keys = ${Object.keys(listData).join(', ')}, postings = ${postings.length}, totalFound = ${listData.totalFound ?? 'unknown'}`);
+
+        let collectedForCompany = 0;
         for (const posting of postings) {
             const postingId = posting.id ?? posting.postingId;
             const title = cleanText(posting.name ?? posting.title);
@@ -200,7 +201,10 @@ try {
             if (!postingId || !isRelevantJob(title, location, targetLocations, keywords, collectAllLocations)) {
                 continue;
             }
-
+            if (collectedForCompany >= maxJobsPerBoard) {
+    break;
+}
+            
             let details = {};
 
             try {
@@ -242,6 +246,7 @@ try {
             job.blogger_html = createBloggerHtml(job);
             await Actor.pushData(job);
             collectedJobs += 1;
+            collectedForCompany += 1;
         }
     }
 
