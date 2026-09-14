@@ -3,7 +3,13 @@ import { Actor } from 'apify';
 await Actor.init();
 
 function cleanText(value = '') {
-    return value
+    return String(value)
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
         .replace(/<[^>]*>/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
