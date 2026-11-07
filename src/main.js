@@ -128,9 +128,14 @@ try {
         }
 
         const data = await response.json();
-        const jobs = Array.isArray(data.jobs) ? data.jobs.slice(0, maxJobsPerBoard) : [];
+        const jobs = Array.isArray(data.jobs) ? data.jobs : [];
+        let collectedForBoard = 0;
 
         for (const sourceJob of jobs) {
+            if (collectedForBoard >= maxJobsPerBoard) {
+                break;
+            }
+
             const title = cleanText(sourceJob.title);
             const location = cleanText(sourceJob.location?.name);
 
@@ -163,6 +168,7 @@ try {
             job.blogger_html = createBloggerHtml(job);
             await Actor.pushData(job);
             collectedJobs += 1;
+            collectedForBoard += 1;
         }
     }
 
@@ -175,80 +181,93 @@ try {
             continue;
         }
 
-        const listUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(identifier)}/postings?limit=100`;
-        const listResponse = await fetch(listUrl);
-
-        if (!listResponse.ok) {
-            console.warn(`Could not load ${configuredCompany}: ${listResponse.status} ${listResponse.statusText}`);
-            continue;
-        }
-
-        const listData = await listResponse.json();
-        const postings = Array.isArray(listData.content) ? listData.content : [];
-
-        console.log(`${configuredCompany}: response keys = ${Object.keys(listData).join(', ')}, postings = ${postings.length}, totalFound = ${listData.totalFound ?? 'unknown'}`);
-
+        const pageSize = 100;
+        let offset = 0;
         let collectedForCompany = 0;
-        for (const posting of postings) {
-            const postingId = posting.id ?? posting.postingId;
-            const title = cleanText(posting.name ?? posting.title);
-            const countryCode = cleanText(posting.location?.country);
-const country = countryCode.toLowerCase() === 'in' ? 'India' : countryCode;
+        while (collectedForCompany < maxJobsPerBoard) {
+            const listUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(identifier)}/postings?limit=${pageSize}&offset=${offset}`;
+            const listResponse = await fetch(listUrl);
 
-const location = cleanText([
-    posting.location?.city,
-    posting.location?.region,
-    country,
-].filter(Boolean).join(', '));
-            if (!postingId || !isRelevantJob(title, location, targetLocations, keywords, collectAllLocations)) {
-                continue;
+            if (!listResponse.ok) {
+                console.warn(`Could not load ${configuredCompany} postings at offset ${offset}: ${listResponse.status} ${listResponse.statusText}`);
+                break;
             }
-            if (collectedForCompany >= maxJobsPerBoard) {
-    break;
-}
-            
-            let details = {};
 
-            try {
-                const detailsUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(identifier)}/postings/${encodeURIComponent(postingId)}`;
-                const detailsResponse = await fetch(detailsUrl);
+            const listData = await listResponse.json();
+            const postings = Array.isArray(listData.content) ? listData.content : [];
+            console.log(`${configuredCompany}: loaded ${postings.length} postings at offset ${offset} of ${listData.totalFound ?? 'unknown'}`);
 
-                if (detailsResponse.ok) {
-                    details = await detailsResponse.json();
-                } else {
-                    console.warn(`Could not load details for ${configuredCompany} job ${postingId}.`);
+            if (postings.length === 0) {
+                break;
+            }
+
+            for (const posting of postings) {
+                const postingId = posting.id ?? posting.postingId;
+                const title = cleanText(posting.name ?? posting.title);
+                const countryCode = cleanText(posting.location?.country);
+                const country = countryCode.toLowerCase() === 'in' ? 'India' : countryCode;
+
+                const location = cleanText([
+                    posting.location?.city,
+                    posting.location?.region,
+                    country,
+                ].filter(Boolean).join(', '));
+                if (!postingId || !isRelevantJob(title, location, targetLocations, keywords, collectAllLocations)) {
+                    continue;
                 }
-            } catch (error) {
-                console.warn(`Could not load details for ${configuredCompany} job ${postingId}: ${error.message}`);
+
+                let details = {};
+
+                try {
+                    const detailsUrl = `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(identifier)}/postings/${encodeURIComponent(postingId)}`;
+                    const detailsResponse = await fetch(detailsUrl);
+
+                    if (detailsResponse.ok) {
+                        details = await detailsResponse.json();
+                    } else {
+                        console.warn(`Could not load details for ${configuredCompany} job ${postingId}.`);
+                    }
+                } catch (error) {
+                    console.warn(`Could not load details for ${configuredCompany} job ${postingId}: ${error.message}`);
+                }
+
+                const company = cleanText(posting.company?.name ?? configuredCompany);
+                const job = {
+                    job_key: `smartrecruiters:${identifier}:${postingId}`,
+                    title,
+                    company,
+                    location,
+                    remote_status: location.toLowerCase().includes('remote') ? 'Remote' : 'Not specified',
+                    job_type: cleanText(posting.typeOfEmployment?.label ?? details.typeOfEmployment?.label),
+                    experience_level: cleanText(posting.experienceLevel?.label ?? details.experienceLevel?.label),
+                    salary: null,
+                    department: cleanText(posting.department?.label ?? details.department?.label),
+                    description: cleanText(smartRecruitersDescription(details)),
+                    requirements: [],
+                    apply_url: `https://jobs.smartrecruiters.com/${encodeURIComponent(identifier)}/${encodeURIComponent(postingId)}`,
+                    source_url: `https://jobs.smartrecruiters.com/${encodeURIComponent(identifier)}/${encodeURIComponent(postingId)}`,
+                    source_name: `SmartRecruiters - ${company}`,
+                    source_type: 'Direct employer',
+                    source_job_id: String(postingId),
+                    source_updated_at: posting.releasedDate ?? details.releasedDate ?? null,
+                    posted_at: posting.releasedDate ?? details.releasedDate ?? null,
+                    scraped_at: new Date().toISOString(),
+                };
+
+                job.blogger_html = createBloggerHtml(job);
+                await Actor.pushData(job);
+                collectedJobs += 1;
+                collectedForCompany += 1;
+
+                if (collectedForCompany >= maxJobsPerBoard) {
+                    break;
+                }
             }
 
-            const company = cleanText(posting.company?.name ?? configuredCompany);
-            const job = {
-                job_key: `smartrecruiters:${identifier}:${postingId}`,
-                title,
-                company,
-                location,
-                remote_status: location.toLowerCase().includes('remote') ? 'Remote' : 'Not specified',
-                job_type: cleanText(posting.typeOfEmployment?.label ?? details.typeOfEmployment?.label),
-                experience_level: cleanText(posting.experienceLevel?.label ?? details.experienceLevel?.label),
-                salary: null,
-                department: cleanText(posting.department?.label ?? details.department?.label),
-                description: cleanText(smartRecruitersDescription(details)),
-                requirements: [],
-                apply_url: `https://jobs.smartrecruiters.com/${encodeURIComponent(identifier)}/${encodeURIComponent(postingId)}`,
-                source_url: `https://jobs.smartrecruiters.com/${encodeURIComponent(identifier)}/${encodeURIComponent(postingId)}`,
-                source_name: `SmartRecruiters - ${company}`,
-                source_type: 'Direct employer',
-                source_job_id: String(postingId),
-                source_updated_at: posting.releasedDate ?? details.releasedDate ?? null,
-                posted_at: posting.releasedDate ?? details.releasedDate ?? null,
-                scraped_at: new Date().toISOString(),
-            };
-
-            job.blogger_html = createBloggerHtml(job);
-            await Actor.pushData(job);
-            collectedJobs += 1;
-            collectedForCompany += 1;
+            offset += postings.length;
+            if (postings.length < pageSize || offset >= (listData.totalFound ?? Infinity)) {
+                break;
+            }
         }
     }
 
