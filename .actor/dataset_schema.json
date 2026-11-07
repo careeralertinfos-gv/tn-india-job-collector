@@ -1,24 +1,63 @@
 {
     "$schema": "https://apify.com/schemas/v1/dataset.ide.json",
     "actorSpecification": 1,
-    "fields": {},
+    "fields": {
+        "type": "object",
+        "properties": {
+            "job_key": { "type": "string" },
+            "title": { "type": "string" },
+            "company": { "type": "string" },
+            "location": { "type": "string" },
+            "remote_status": { "type": "string" },
+            "job_type": { "type": ["string", "null"] },
+            "experience_level": { "type": ["string", "null"] },
+            "salary": { "type": ["string", "null"] },
+            "department": { "type": "string" },
+            "description": { "type": "string" },
+            "requirements": {
+                "type": "array",
+                "items": { "type": "string" }
+            },
+            "apply_url": { "type": "string" },
+            "source_url": { "type": "string" },
+            "source_name": { "type": "string" },
+            "source_type": { "type": "string" },
+            "source_job_id": { "type": "string" },
+            "source_updated_at": { "type": ["string", "null"] },
+            "posted_at": { "type": "string", "format": "date-time" },
+            "scraped_at": { "type": "string", "format": "date-time" },
+            "blogger_html": { "type": "string" }
+        }
+    },
     "views": {
         "overview": {
-            "title": "Overview",
+            "title": "Recent India job listings",
             "transformation": {
-                "fields": ["title", "url"]
+                "fields": [
+                    "title",
+                    "company",
+                    "location",
+                    "posted_at",
+                    "job_type",
+                    "experience_level",
+                    "salary",
+                    "apply_url",
+                    "source_name"
+                ],
+                "desc": false
             },
             "display": {
                 "component": "table",
                 "properties": {
-                    "title": {
-                        "label": "Title",
-                        "format": "text"
-                    },
-                    "url": {
-                        "label": "URL",
-                        "format": "link"
-                    }
+                    "title": { "label": "Job title", "format": "text" },
+                    "company": { "label": "Company", "format": "text" },
+                    "location": { "label": "Location", "format": "text" },
+                    "posted_at": { "label": "Posted at", "format": "date" },
+                    "job_type": { "label": "Employment type", "format": "text" },
+                    "experience_level": { "label": "Experience", "format": "text" },
+                    "salary": { "label": "Salary", "format": "text" },
+                    "apply_url": { "label": "Apply", "format": "link" },
+                    "source_name": { "label": "Source", "format": "text" }
                 }
             }
         }

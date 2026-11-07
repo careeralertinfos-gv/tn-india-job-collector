@@ -1,8 +1,8 @@
 {
-    "name": "crawlee-cheerio-javascript",
+    "name": "tn-india-job-collector",
     "version": "0.0.1",
     "type": "module",
-    "description": "This is a boilerplate of an Apify Actor.",
+    "description": "Collects India job postings from employer feeds, LinkedIn, and Naukri.",
     "engines": {
         "node": ">=22"
     },

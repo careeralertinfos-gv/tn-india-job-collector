@@ -1,10 +1,10 @@
 {
     "$schema": "https://apify.com/schemas/v1/actor.ide.json",
     "actorSpecification": 1,
-    "name": "project-cheerio-crawler-javascript",
-    "title": "Project Cheerio Crawler Javascript",
-    "description": "Crawlee and Cheerio project in javascript.",
-    "version": "0.0",
+    "name": "tn-india-job-collector",
+    "title": "TN India Job Collector",
+    "description": "Collects job postings from employer career feeds, LinkedIn, and Naukri; filters to the last 24 hours and prioritizes Tamil Nadu.",
+    "version": "0.1.0",
     "meta": {
         "templateId": "js-crawlee-cheerio",
         "generatedBy": "Copilot SDK in VS Code"

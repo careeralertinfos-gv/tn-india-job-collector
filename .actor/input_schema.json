@@ -1,61 +1,96 @@
 {
-  "$schema": "https://apify.com/schemas/v1/input.json",
-  "title": "TN India Job Collector",
-  "description": "Collects Tamil Nadu and India-relevant jobs from public Greenhouse career feeds.",
-  "type": "object",
-  "schemaVersion": 1,
-  "properties": {
-    "greenhouseBoards": {
-      "title": "Greenhouse company boards",
-      "type": "array",
-      "description": "Add company board tokens as JSON. Example: [{\"token\":\"company-token\",\"company\":\"Company Name\"}]",
-      "editor": "json",
-      "prefill": []
-    },
-    "smartRecruitersCompanies": {
-  "title": "SmartRecruiters companies",
-  "type": "array",
-  "description": "Add company identifiers as JSON. Example: [{\"identifier\":\"Freshworks\",\"company\":\"Freshworks\"}]",
-  "editor": "json",
-  "prefill": []
-},
-    "targetLocations": {
-      "title": "Target locations",
-      "type": "array",
-      "description": "Only jobs whose listed location contains one of these values will be collected.",
-      "editor": "stringList",
-      "prefill": [
-        "Tamil Nadu",
-        "Chennai",
-        "Coimbatore",
-        "Madurai",
-        "Tiruchirappalli",
-        "Hosur",
-        "Salem",
-        "Tirunelveli",
-        "India"
-      ]
-    },
-    "collectAllLocations": {
-  "title": "Collect all locations",
-  "type": "boolean",
-  "description": "Use only for testing a source. When enabled, location filtering is skipped.",
-  "default": false
-},
-    "keywords": {
-      "title": "Job keywords",
-      "type": "array",
-      "description": "Leave empty to collect every job matching the target locations. Add role keywords later to narrow results.",
-      "editor": "stringList",
-      "prefill": []
-    },
-    "maxJobsPerBoard": {
-      "title": "Maximum jobs per company",
-      "type": "integer",
-      "description": "Limits the number of jobs read from each company board in one run.",
-      "default": 25,
-      "minimum": 1,
-      "maximum": 100
+    "$schema": "https://apify.com/schemas/v1/input.json",
+    "title": "TN India Job Collector",
+    "description": "Collects recent India job postings from employer feeds, LinkedIn, and Naukri. Results from Tamil Nadu are shown first.",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "enableLinkedInJobs": {
+            "title": "Collect LinkedIn jobs",
+            "type": "boolean",
+            "description": "Runs the paid LinkedIn Jobs Scraper Actor for Tamil Nadu and India. Each search is capped by the external result limit.",
+            "default": true
+        },
+        "enableNaukriJobs": {
+            "title": "Collect Naukri jobs",
+            "type": "boolean",
+            "description": "Runs the paid Naukri Job Scraper Actor for Tamil Nadu and India. Each search is capped by the external result limit.",
+            "default": true
+        },
+        "externalSearchKeyword": {
+            "title": "External job search keyword",
+            "type": "string",
+            "description": "Optional keyword or job role used by LinkedIn and Naukri. Leave empty for broad searches.",
+            "editor": "textfield",
+            "default": ""
+        },
+        "maxExternalJobsPerSearch": {
+            "title": "Maximum external jobs per search",
+            "type": "integer",
+            "description": "Maximum results requested per location search from each paid Store Actor. Two searches (Tamil Nadu and India) are run per enabled Actor.",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 50
+        },
+        "maxExternalChargePerSearchUsd": {
+            "title": "Maximum Store Actor charge per search (USD)",
+            "type": "number",
+            "description": "Per-run Apify charge cap passed to each LinkedIn or Naukri child run. Four searches may run when both sources are enabled.",
+            "default": 0.02,
+            "minimum": 0.01,
+            "maximum": 1
+        },
+        "greenhouseBoards": {
+            "title": "Greenhouse company boards",
+            "type": "array",
+            "description": "Add company board tokens as JSON. Example: [{\"token\":\"company-token\",\"company\":\"Company Name\"}]",
+            "editor": "json",
+            "prefill": []
+        },
+        "smartRecruitersCompanies": {
+            "title": "SmartRecruiters companies",
+            "type": "array",
+            "description": "Add company identifiers as JSON. Example: [{\"identifier\":\"Freshworks\",\"company\":\"Freshworks\"}]",
+            "editor": "json",
+            "prefill": []
+        },
+        "targetLocations": {
+            "title": "Target locations",
+            "type": "array",
+            "description": "Only jobs whose listed location contains one of these values will be collected. The default includes India-wide results; Tamil Nadu jobs are sorted first.",
+            "editor": "stringList",
+            "prefill": [
+                "Tamil Nadu",
+                "Chennai",
+                "Coimbatore",
+                "Madurai",
+                "Tiruchirappalli",
+                "Hosur",
+                "Salem",
+                "Tirunelveli",
+                "India"
+            ]
+        },
+        "collectAllLocations": {
+            "title": "Collect all locations",
+            "type": "boolean",
+            "description": "Use only for testing a source. When enabled, location filtering is skipped.",
+            "default": false
+        },
+        "keywords": {
+            "title": "Job keywords",
+            "type": "array",
+            "description": "Leave empty to collect all jobs matching the target locations. Add role keywords later to filter titles and locations.",
+            "editor": "stringList",
+            "prefill": []
+        },
+        "maxJobsPerBoard": {
+            "title": "Maximum jobs per company",
+            "type": "integer",
+            "description": "Limits recent jobs collected from each Greenhouse or SmartRecruiters company.",
+            "default": 25,
+            "minimum": 1,
+            "maximum": 100
+        }
     }
-  }
 }
