@@ -1,5 +1,5 @@
 import { Actor } from 'apify';
-import { log } from 'apify/log';
+import { log } from 'apify';
 import {
     deduplicateAndPrioritizeJobs,
     isPostedWithinLast24Hours,
