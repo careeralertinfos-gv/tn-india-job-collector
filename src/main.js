@@ -94,9 +94,9 @@ function isRelevantJob(title, location, targetLocations, keywords, collectAllLoc
     return true;
 }
 
-async function runStoreActor(actorId, actorInput, maxItems, maxTotalChargeUsd) {
+async function runStoreActor(actorId, actorInput, maxItems, maxTotalChargeUsd, searchLabel) {
     log.info(
-        `Starting ${actorId} with a maximum of ${maxItems} results and $${maxTotalChargeUsd.toFixed(2)} in event charges.`,
+        `Starting ${actorId} (${searchLabel}) with a maximum of ${maxItems} results and $${maxTotalChargeUsd.toFixed(2)} in event charges.`,
     );
     const run = await Actor.call(actorId, actorInput, {
         maxItems,
@@ -345,6 +345,7 @@ try {
     }
 
     const searchKeyword = externalSearchKeyword;
+    const externalSearches = [];
 
     if (enableLinkedInJobs) {
         for (const location of ['Tamil Nadu', 'India']) {
@@ -357,13 +358,12 @@ try {
                 limitPerSource: maxExternalJobsPerSearch,
                 splitByLocation: false,
             };
-            const sourceJobs = await runStoreActor(
-                'curious_coder/linkedin-jobs-scraper',
-                linkedinInput,
-                maxExternalJobsPerSearch,
-                maxExternalChargePerSearchUsd,
-            );
-            collectedJobs.push(...sourceJobs.map((job) => normalizeLinkedInJob(job)));
+            externalSearches.push({
+                label: `LinkedIn - ${location}`,
+                actorId: 'curious_coder/linkedin-jobs-scraper',
+                input: linkedinInput,
+                normalize: normalizeLinkedInJob,
+            });
         }
     }
 
@@ -384,14 +384,36 @@ try {
                 fetchDetails: false,
                 searchUrl: search.searchUrl,
             };
+            externalSearches.push({
+                label: `Naukri - ${search.name}`,
+                actorId: 'muhammetakkurtt/naukri-job-scraper',
+                input: naukriInput,
+                normalize: normalizeNaukriJob,
+            });
+        }
+    }
+
+    const externalResults = await Promise.allSettled(
+        externalSearches.map(async ({ actorId, input: actorInput, label, normalize }) => {
             const sourceJobs = await runStoreActor(
-                'muhammetakkurtt/naukri-job-scraper',
-                naukriInput,
+                actorId,
+                actorInput,
                 maxExternalJobsPerSearch,
                 maxExternalChargePerSearchUsd,
+                label,
             );
-            log.info(`Naukri ${search.name} search returned ${sourceJobs.length} raw jobs.`);
-            collectedJobs.push(...sourceJobs.map((job) => normalizeNaukriJob(job)));
+            log.info(`${label} returned ${sourceJobs.length} raw jobs.`);
+            return sourceJobs.map((job) => normalize(job));
+        }),
+    );
+
+    for (const [index, result] of externalResults.entries()) {
+        if (result.status === 'fulfilled') {
+            collectedJobs.push(...result.value);
+        } else {
+            log.error(
+                `${externalSearches[index].label} failed: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
+            );
         }
     }
 
