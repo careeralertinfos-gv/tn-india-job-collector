@@ -378,7 +378,7 @@ try {
         ]) {
             const naukriInput = {
                 jobBoard: 'naukri',
-                maxJobs: maxExternalJobsPerSearch,
+                maxJobs: Math.max(50, maxExternalJobsPerSearch),
                 freshness: '1',
                 sortBy: 'date',
                 fetchDetails: false,

@@ -28,14 +28,14 @@ Use the **Input** tab to configure:
 | --- | --- |
 | `enableLinkedInJobs` / `enableNaukriJobs` | Enable or disable each paid community Actor; both are enabled by default. |
 | `maxExternalJobsPerSearch` | Maximum requested results per location search, from 1 to 50. There are separate Tamil Nadu and India searches for each enabled portal. The default 10 is intended for cost-controlled testing. |
-| `maxExternalChargePerSearchUsd` | Maximum event charge passed to each paid child run. The default is $0.02 per search; four searches may run when both portals are enabled. |
+| `maxExternalChargePerSearchUsd` | Maximum event charge passed to each paid child run. Naukri requires at least $0.10 per run; with all four searches enabled the configured caps can total $0.40. |
 | `externalSearchKeyword` | Optional role or keyword passed to LinkedIn and Naukri. |
 | `greenhouseBoards` / `smartRecruitersCompanies` | Optional company boards or identifiers for employer feeds. |
 | `targetLocations` | Location substrings used for filtering. The default includes `India`, so it retains India-wide matches; Tamil Nadu locations are ordered first. |
 | `keywords` | Optional final title/location filter. A job must match at least one keyword when provided. |
 | `maxJobsPerBoard` | Per-company cap for Greenhouse and SmartRecruiters. |
 
-The portal Actors receive a Tamil Nadu search and an India-wide search. The Actor deduplicates overlapping results before saving them. Jobs with a date-only value or no parseable posting timestamp are excluded because they cannot be verified as posted within the exact 24-hour window.
+The portal Actors receive a Tamil Nadu search and an India-wide search. The Actor deduplicates overlapping results before saving them. LinkedIn's relative posting time is used when an exact timestamp is unavailable; listings with no usable timestamp are excluded because they cannot be verified as posted within the exact 24-hour window.
 
 ## Output
 
@@ -76,14 +76,14 @@ Missing compensation or other source fields remain blank; the Actor does not inf
 
 LinkedIn and Naukri are paid per-result Actors. At the listed starting rates checked during setup, 10 results from each of the two searches on each portal would be approximately **$0.036** in result charges (20 LinkedIn results at $1.00/1,000 plus 20 Naukri results at $0.80/1,000). Actual charges can differ by Store pricing, discounts, results returned, and platform usage. Check both Actors’ current Pricing tabs before running them.
 
-The limit is per search, not per portal: each enabled portal can return up to twice `maxExternalJobsPerSearch`. A `maxItems` result cap and a per-child-run `maxTotalChargeUsd` limit are sent to Apify; with both portals enabled, the default event-charge cap is $0.08 per parent run, excluding any platform usage charges. Begin with 10 and inspect the completed runs and billing before increasing it or creating a daily schedule. Direct Greenhouse and SmartRecruiters API calls are separate from the community Actor result fees.
+The limit is per search, not per portal: each enabled portal can return up to twice `maxExternalJobsPerSearch`. A `maxItems` result cap and a per-child-run `maxTotalChargeUsd` limit are sent to Apify. Naukri requires a minimum $0.10 event-charge cap per child run; with both portals enabled, the four configured caps can total up to $0.40 per parent run, excluding any platform usage charges. Actual pay-per-event costs depend on returned results and can be lower than the cap. Begin with 10 and inspect the completed runs and billing before increasing it or creating a daily schedule. Direct Greenhouse and SmartRecruiters API calls are separate from the community Actor result fees.
 
 ## Tips or Advanced options
 
 - Start with a low external result limit and test one portal at a time if you want to compare quality and charges.
 - Set `externalSearchKeyword` to a role such as `software engineer` to narrow paid portal searches.
 - Tamil Nadu listings sort before other India locations; the dataset is still India-wide.
-- LinkedIn’s date filter and Naukri’s one-day freshness filter are supplemented by a strict timestamp check. Naukri local timestamps are interpreted as India Standard Time.
+- LinkedIn's date filter and Naukri's one-day freshness filter are supplemented by a strict timestamp check. LinkedIn relative timestamps are interpreted relative to collection time; Naukri local timestamps are interpreted as India Standard Time.
 - Greenhouse does not always provide a true posting timestamp. Such records are excluded rather than using an update timestamp as a posting date.
 - The Actor prepares HTML but does not publish to Blogger. Publishing requires a separate integration and credentials.
 

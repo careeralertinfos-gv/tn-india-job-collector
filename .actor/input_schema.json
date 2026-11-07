@@ -33,11 +33,11 @@
             "maximum": 50
         },
         "maxExternalChargePerSearchUsd": {
-            "title": "Maximum Store Actor charge per search (USD)",
+            "title": "Maximum child Actor event charge per search (USD)",
             "type": "number",
-            "description": "Per-run Apify charge cap passed to each LinkedIn or Naukri child run. Four searches may run when both sources are enabled.",
-            "default": 0.02,
-            "minimum": 0.01,
+            "description": "Per-run event charge cap passed to each child Actor. Naukri requires at least $0.10. Four searches may run when both sources are enabled.",
+            "default": 0.1,
+            "minimum": 0.1,
             "maximum": 1
         },
         "greenhouseBoards": {

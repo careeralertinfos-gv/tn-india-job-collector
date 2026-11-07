@@ -6,6 +6,7 @@ import {
     normalizeLinkedInJob,
     normalizeNaukriJob,
     parsePostedAt,
+    parseRelativePostedAt,
 } from '../src/job-utils.js';
 
 describe('job normalization and selection', () => {
@@ -21,6 +22,20 @@ describe('job normalization and selection', () => {
         expect(isPostedWithinLast24Hours('2026-11-06T11:59:59.999Z', now)).toBe(false);
         expect(isPostedWithinLast24Hours('2026-11-07T12:00:00.001Z', now)).toBe(false);
         expect(isPostedWithinLast24Hours('2026-11-07', now)).toBe(false);
+    });
+
+    it('uses LinkedIn relative posting time when its exact timestamp is unavailable', () => {
+        const scrapedAt = '2026-11-07T12:00:00.000Z';
+
+        expect(parseRelativePostedAt('2 hours ago', Date.parse(scrapedAt))).toBe('2026-11-07T10:00:00.000Z');
+        expect(parseRelativePostedAt('1 day ago', Date.parse(scrapedAt))).toBe('2026-11-06T12:00:00.000Z');
+        expect(parseRelativePostedAt('unknown', Date.parse(scrapedAt))).toBeNull();
+        expect(
+            normalizeLinkedInJob(
+                { postedAt: '2026-11-07', postedAtRelative: '2 hours ago' },
+                scrapedAt,
+            ).posted_at,
+        ).toBe('2026-11-07T10:00:00.000Z');
     });
 
     it('normalizes LinkedIn and Naukri job records into the shared output shape', () => {

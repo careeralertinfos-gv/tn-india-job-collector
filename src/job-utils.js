@@ -41,6 +41,22 @@ export function parsePostedAt(value, timeZone = null) {
     return Number.isNaN(timestamp) ? null : new Date(timestamp).toISOString();
 }
 
+export function parseRelativePostedAt(value, now = Date.now()) {
+    if (typeof value !== 'string' || !value.trim()) return null;
+
+    const normalized = value.trim().toLowerCase();
+    if (/^(just now|now|moments ago|less than a minute ago)$/.test(normalized)) {
+        return new Date(now).toISOString();
+    }
+
+    const match = normalized.match(/^(\d+)\s+(minute|hour|day)s?\s+ago$/);
+    if (!match) return null;
+
+    const amount = Number(match[1]);
+    const unitMs = { minute: 60_000, hour: 3_600_000, day: 86_400_000 }[match[2]];
+    return new Date(now - amount * unitMs).toISOString();
+}
+
 export function isPostedWithinLast24Hours(postedAt, now = Date.now()) {
     const parsedDate = parsePostedAt(postedAt);
     if (!parsedDate) return false;
@@ -78,7 +94,9 @@ function getRemoteStatus(location, explicitRemote, workplaceTypes = []) {
 
 export function normalizeLinkedInJob(sourceJob, scrapedAt = new Date().toISOString()) {
     const jobId = sourceJob.id ?? sourceJob.jobId;
-    const postedAt = parsePostedAt(sourceJob.postedAtTimestamp ?? sourceJob.postedAt);
+    const postedAt =
+        parsePostedAt(sourceJob.postedAtTimestamp ?? sourceJob.postedAt) ??
+        parseRelativePostedAt(sourceJob.postedAtRelative, Date.parse(scrapedAt));
     const applyUrl = sourceJob.link ?? sourceJob.applyUrl ?? '';
     const location = cleanText(sourceJob.location);
     const company = cleanText(sourceJob.companyName ?? sourceJob.company);
