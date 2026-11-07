@@ -104,15 +104,29 @@ async function runStoreActor(actorId, actorInput, maxItems, maxTotalChargeUsd) {
         waitSecs: 300,
     });
 
-    if (run.status !== 'SUCCEEDED') {
-        throw new Error(`${actorId} finished with status ${run.status ?? 'unknown'}.`);
+    if (!run.id) {
+        throw new Error(`${actorId} call did not return a run ID.`);
     }
 
-    if (!run.defaultDatasetId) {
-        throw new Error(`${actorId} completed without a default dataset.`);
+    log.info(`${actorId} run ${run.id} returned with status ${run.status ?? 'unknown'}.`);
+
+    let completedRun = run;
+    if (completedRun.status === 'READY' || completedRun.status === 'RUNNING') {
+        log.info(`Waiting for ${actorId} run ${run.id} to finish before reading its dataset.`);
+        completedRun = await Actor.apifyClient.run(run.id).get({ waitForFinish: 300 });
     }
 
-    const dataset = await Actor.openDataset(run.defaultDatasetId);
+    if (!completedRun || completedRun.status !== 'SUCCEEDED') {
+        throw new Error(
+            `${actorId} run ${run.id} finished with status ${completedRun?.status ?? 'unknown'}; check its run log in Apify Console.`,
+        );
+    }
+
+    if (!completedRun.defaultDatasetId) {
+        throw new Error(`${actorId} run ${run.id} completed without a default dataset.`);
+    }
+
+    const dataset = await Actor.openDataset(completedRun.defaultDatasetId);
     const { items } = await dataset.getData({ limit: maxItems });
     log.info(`${actorId} returned ${items.length} jobs.`);
     return items;
