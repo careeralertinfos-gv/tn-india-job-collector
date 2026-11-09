@@ -27,15 +27,15 @@ Use the **Input** tab to configure:
 | Input | Purpose |
 | --- | --- |
 | `enableLinkedInJobs` / `enableNaukriJobs` | Enable or disable each paid community Actor; both are enabled by default. |
-| `maxExternalJobsPerSearch` | Maximum results imported from each enabled portal, from 1 to 50. Each portal runs one Chennai search. Naukri requires a minimum child input of 50 jobs, but the collector imports only this configured limit. The default 10 is intended for cost-controlled testing. |
+| `maxExternalJobsPerSearch` | Maximum results imported from each enabled portal, from 1 to 50. Each portal runs one search. Naukri requires a minimum child input of 50 jobs, but the collector imports only this configured limit. The default 10 is intended for cost-controlled testing. |
 | `maxExternalChargePerSearchUsd` | Maximum event charge passed to each paid child run. Naukri requires at least $0.10 per run; with both portals enabled the configured caps can total $0.20. |
-| `externalSearchKeyword` | Optional single role or keyword that overrides the default role query for LinkedIn and Naukri; it is also included in the final title filter. |
+| `externalSearchKeyword` | Optional single role or keyword that replaces the default role query for LinkedIn and Naukri; it is also included in the final title filter. |
 | `greenhouseBoards` / `smartRecruitersCompanies` | Optional company boards or identifiers for employer feeds. |
 | `targetLocations` | Location substrings used for filtering. The default targets Tamil Nadu and Chennai. |
 | `keywords` | Defaults to the agreed Software/IT and Data/AI role list. The terms are sent to both portal searches as a Boolean OR query and also filter final job titles. Edit or clear the list to change roles; search filtering improves relevance but does not guarantee lower child Actor charges. |
 | `maxJobsPerBoard` | Per-company cap for Greenhouse and SmartRecruiters. |
 
-Each enabled portal receives one Chennai search, reducing duplicate searches and child-run charges. By default, the Software/IT and Data/AI role keywords are passed to LinkedIn as a Boolean OR query and included in Naukri's Chennai search URL; Naukri prioritizes `searchUrl` over a separate keyword field. The same role list filters final titles. Enter `externalSearchKeyword` to override the role query with one term, or edit/clear `keywords` to change the list. The collector deduplicates overlapping postings before saving them. Relative posting dates are parsed when supported; jobs without a usable date or outside the last 24 hours are excluded.
+Each enabled portal receives one search, reducing duplicate searches and child-run charges. LinkedIn receives the role query, Chennai location, and past-24-hours filter. Naukri uses manual search inputs (`keyword`, Chennai city ID `183`, one-day `freshness`, and date sort) without a `searchUrl`, so its native search filters are applied together. Enter `externalSearchKeyword` to replace the multi-role query with one term, or edit/clear `keywords` to change the role list. The collector also applies final Chennai/Tamil Nadu, role, and 24-hour date filters, then deduplicates overlapping postings before saving them.
 
 ## Output
 

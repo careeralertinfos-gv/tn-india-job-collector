@@ -14,13 +14,13 @@
         "enableNaukriJobs": {
             "title": "Collect Naukri jobs",
             "type": "boolean",
-            "description": "Runs one Chennai search with the paid Naukri Job Scraper Actor, capped by the external result limit.",
+            "description": "Runs one Naukri keyword search filtered to Chennai using its native city, freshness, and date sort filters.",
             "default": true
         },
         "externalSearchKeyword": {
             "title": "External job search keyword",
             "type": "string",
-            "description": "Optional single search term that overrides the default multi-role search query for LinkedIn and Naukri. It is also included in the final title filter. Leave empty to search using the Job keywords list.",
+            "description": "Optional single role or keyword that replaces the default multi-role query for LinkedIn and Naukri. It is also included in the final title filter. Leave empty to use Job keywords.",
             "editor": "textfield",
             "default": ""
         },

@@ -395,15 +395,14 @@ try {
     }
 
     if (enableNaukriJobs) {
-        const keywordSlug = roleSearchQuery.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const chennaiSearchUrl = `https://www.naukri.com/${keywordSlug ? `${keywordSlug}-` : ''}jobs-in-chennai`;
         const naukriInput = {
             jobBoard: 'naukri',
             maxJobs: Math.max(50, maxExternalJobsPerSearch),
+            keyword: roleSearchQuery || undefined,
             freshness: '1',
             sortBy: 'date',
+            cities: ['183'],
             fetchDetails: false,
-            searchUrl: chennaiSearchUrl,
         };
         externalSearches.push({
             label: 'Naukri - Chennai, Tamil Nadu',
