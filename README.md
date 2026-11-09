@@ -29,13 +29,13 @@ Use the **Input** tab to configure:
 | `enableLinkedInJobs` / `enableNaukriJobs` | Enable or disable each paid community Actor; both are enabled by default. |
 | `maxExternalJobsPerSearch` | Maximum results imported from each enabled portal, from 1 to 50. Each portal runs one Chennai search. Naukri requires a minimum child input of 50 jobs, but the collector imports only this configured limit. The default 10 is intended for cost-controlled testing. |
 | `maxExternalChargePerSearchUsd` | Maximum event charge passed to each paid child run. Naukri requires at least $0.10 per run; with both portals enabled the configured caps can total $0.20. |
-| `externalSearchKeyword` | Optional single role or keyword passed to LinkedIn and Naukri to narrow their searches. |
+| `externalSearchKeyword` | Optional single role or keyword that overrides the default role query for LinkedIn and Naukri; it is also included in the final title filter. |
 | `greenhouseBoards` / `smartRecruitersCompanies` | Optional company boards or identifiers for employer feeds. |
 | `targetLocations` | Location substrings used for filtering. The default targets Tamil Nadu and Chennai. |
-| `keywords` | Defaults to the agreed Software/IT and Data/AI role list. Filters job titles and locations after scraping; clear or edit it to change which results are saved. It does not reduce child Actor charges. |
+| `keywords` | Defaults to the agreed Software/IT and Data/AI role list. The terms are sent to both portal searches as a Boolean OR query and also filter final job titles. Edit or clear the list to change roles; search filtering improves relevance but does not guarantee lower child Actor charges. |
 | `maxJobsPerBoard` | Per-company cap for Greenhouse and SmartRecruiters. |
 
-Each enabled portal receives one Chennai search, reducing duplicate searches and child-run charges. The default role filter covers Software/IT and Data/AI titles; use `externalSearchKeyword` to narrow the portal query to one role, or edit/clear `keywords` to change the final title filter. The collector deduplicates overlapping postings before saving them. Relative posting dates are parsed when supported; jobs without a usable date or outside the last 24 hours are excluded.
+Each enabled portal receives one Chennai search, reducing duplicate searches and child-run charges. By default, the Software/IT and Data/AI role keywords are passed to LinkedIn as a Boolean OR query and included in Naukri's Chennai search URL; Naukri prioritizes `searchUrl` over a separate keyword field. The same role list filters final titles. Enter `externalSearchKeyword` to override the role query with one term, or edit/clear `keywords` to change the list. The collector deduplicates overlapping postings before saving them. Relative posting dates are parsed when supported; jobs without a usable date or outside the last 24 hours are excluded.
 
 ## Output
 
@@ -82,8 +82,8 @@ The result limit applies once per enabled portal and caps how many results the p
 ## Tips or Advanced options
 
 - Start with a low external result limit and disable a portal if you want to compare source quality and charges.
-- Set `externalSearchKeyword` to a role such as `software engineer` to narrow LinkedIn and Naukri searches. This is the best way to reduce broad, less relevant LinkedIn results.
-- The default `keywords` list filters saved job titles to Software/IT and Data/AI roles after collection. This improves relevance, but only `externalSearchKeyword` and the child result limit affect the portal search itself.
+- Set `externalSearchKeyword` to a role such as `software engineer` to override the multi-role query with a focused search on both portals.
+- The default `keywords` list is used in the portal searches and as a final title filter. This improves relevance but does not guarantee lower child Actor charges.
 - Portal searches target Chennai, Tamil Nadu. Greenhouse and SmartRecruiters results are limited by the configured target locations.
 - LinkedIn's date filter and Naukri's one-day freshness filter are supplemented by a strict timestamp check. LinkedIn relative timestamps are interpreted relative to collection time; Naukri local timestamps are interpreted as India Standard Time.
 - Greenhouse does not always provide a true posting timestamp. Such records are excluded rather than using an update timestamp as a posting date.

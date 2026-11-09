@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    buildBooleanRoleQuery,
     deduplicateAndPrioritizeJobs,
     isPostedWithinLast24Hours,
     normalizeLinkedInJob,
@@ -10,6 +11,12 @@ import {
 } from '../src/job-utils.js';
 
 describe('job normalization and selection', () => {
+    it('builds a Boolean OR query from non-empty role keywords', () => {
+        expect(buildBooleanRoleQuery(['software engineer', '', 'data analyst'])).toBe(
+            '"software engineer" OR "data analyst"',
+        );
+    });
+
     it('parses Naukri timestamps as India time and excludes date-only values', () => {
         expect(parsePostedAt('2026-11-07 13:23:19', '+05:30')).toBe('2026-11-07T07:53:19.000Z');
         expect(parsePostedAt('2026-11-07')).toBeNull();

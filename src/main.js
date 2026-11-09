@@ -1,6 +1,7 @@
 import { Actor } from 'apify';
 import { log } from 'apify';
 import {
+    buildBooleanRoleQuery,
     deduplicateAndPrioritizeJobs,
     isPostedWithinLast24Hours,
     isTamilNaduLocation,
@@ -180,6 +181,9 @@ try {
         'Chennai',
     ];
     const keywords = input.keywords ?? DEFAULT_ROLE_KEYWORDS;
+    const finalRoleKeywords = externalSearchKeyword
+        ? [...new Set([...keywords, externalSearchKeyword])]
+        : keywords;
     const maxJobsPerBoard = input.maxJobsPerBoard ?? 25;
     const collectAllLocations = input.collectAllLocations === true;
 
@@ -369,12 +373,12 @@ try {
         }
     }
 
-    const searchKeyword = externalSearchKeyword;
+    const roleSearchQuery = externalSearchKeyword || buildBooleanRoleQuery(keywords);
     const externalSearches = [];
 
     if (enableLinkedInJobs) {
         const linkedinInput = {
-            keywords: searchKeyword || undefined,
+            keywords: roleSearchQuery || undefined,
             location: 'Chennai, Tamil Nadu, India',
             datePosted: 'past24Hours',
             autoConvertToAiSearch: true,
@@ -391,7 +395,7 @@ try {
     }
 
     if (enableNaukriJobs) {
-        const keywordSlug = searchKeyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const keywordSlug = roleSearchQuery.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         const chennaiSearchUrl = `https://www.naukri.com/${keywordSlug ? `${keywordSlug}-` : ''}jobs-in-chennai`;
         const naukriInput = {
             jobBoard: 'naukri',
@@ -439,7 +443,7 @@ try {
     const locationMatchedJobs = recentJobs.filter((job) =>
         isRelevantJob(job.title, job.location, targetLocations, [], collectAllLocations),
     );
-    const relevantJobs = locationMatchedJobs.filter((job) => matchesAny(job.title, keywords));
+    const relevantJobs = locationMatchedJobs.filter((job) => matchesAny(job.title, finalRoleKeywords));
     const prioritizedJobs = deduplicateAndPrioritizeJobs(relevantJobs);
 
     for (const job of prioritizedJobs) {

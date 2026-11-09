@@ -18,6 +18,14 @@ export function matchesAny(value, terms) {
     return terms.some((term) => normalizedValue.includes(String(term).toLowerCase()));
 }
 
+export function buildBooleanRoleQuery(keywords) {
+    return keywords
+        .map((keyword) => String(keyword).trim())
+        .filter(Boolean)
+        .map((keyword) => `"${keyword.replace(/"/g, '\\"')}"`)
+        .join(' OR ');
+}
+
 export function parsePostedAt(value, timeZone = null) {
     if (typeof value === 'number' && Number.isFinite(value)) {
         const milliseconds = value < 1e12 ? value * 1000 : value;

@@ -20,7 +20,7 @@
         "externalSearchKeyword": {
             "title": "External job search keyword",
             "type": "string",
-            "description": "Optional single role or keyword passed to LinkedIn and Naukri to narrow their searches. Leave empty for broad searches; the Job keywords filter still applies to collected results.",
+            "description": "Optional single search term that overrides the default multi-role search query for LinkedIn and Naukri. It is also included in the final title filter. Leave empty to search using the Job keywords list.",
             "editor": "textfield",
             "default": ""
         },
@@ -73,7 +73,7 @@
         "keywords": {
             "title": "Job keywords",
             "type": "array",
-            "description": "Keep the default Software/IT and Data/AI roles to filter collected titles, or edit/clear the list. This filters results after scraping and does not reduce child Actor charges.",
+            "description": "Default Software/IT and Data/AI roles are sent to both portal searches as an OR query and also filter final job titles. Edit or clear the list to change the roles. Search terms improve relevance but do not guarantee lower child Actor charges.",
             "editor": "stringList",
             "default": [
                 "software engineer",
