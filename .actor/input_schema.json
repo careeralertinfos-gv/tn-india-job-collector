@@ -8,13 +8,13 @@
         "enableLinkedInJobs": {
             "title": "Collect LinkedIn jobs",
             "type": "boolean",
-            "description": "Runs one India-wide search with the paid LinkedIn Jobs Scraper Actor, capped by the external result limit.",
+            "description": "Runs one Chennai, Tamil Nadu search with the paid LinkedIn Jobs Scraper Actor, capped by the external result limit.",
             "default": true
         },
         "enableNaukriJobs": {
             "title": "Collect Naukri jobs",
             "type": "boolean",
-            "description": "Runs one India-wide search with the paid Naukri Job Scraper Actor, capped by the external result limit.",
+            "description": "Runs one Chennai search with the paid Naukri Job Scraper Actor, capped by the external result limit.",
             "default": true
         },
         "externalSearchKeyword": {
@@ -27,7 +27,7 @@
         "maxExternalJobsPerSearch": {
             "title": "Maximum external jobs per search",
             "type": "integer",
-            "description": "Maximum results requested from each enabled paid Store Actor. One India-wide search is run per enabled Actor.",
+            "description": "Maximum results requested from each enabled paid Store Actor. One Chennai search is run per enabled Actor.",
             "default": 10,
             "minimum": 1,
             "maximum": 50
@@ -57,18 +57,11 @@
         "targetLocations": {
             "title": "Target locations",
             "type": "array",
-            "description": "Only jobs whose listed location contains one of these values will be collected. The default includes India-wide results; Tamil Nadu jobs are sorted first.",
+            "description": "Only jobs whose listed location contains one of these values will be collected. The default targets Tamil Nadu and Chennai.",
             "editor": "stringList",
             "prefill": [
                 "Tamil Nadu",
-                "Chennai",
-                "Coimbatore",
-                "Madurai",
-                "Tiruchirappalli",
-                "Hosur",
-                "Salem",
-                "Tirunelveli",
-                "India"
+                "Chennai"
             ]
         },
         "collectAllLocations": {

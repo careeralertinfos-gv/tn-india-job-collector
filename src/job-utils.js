@@ -132,8 +132,20 @@ export function normalizeLinkedInJob(sourceJob, scrapedAt = new Date().toISOStri
 
 export function normalizeNaukriJob(sourceJob, scrapedAt = new Date().toISOString()) {
     const jobId = sourceJob.jobId ?? sourceJob.id;
-    const postedAt = parsePostedAt(sourceJob.createdDate, '+05:30');
-    const applyUrl = sourceJob.jdURL ?? sourceJob.url ?? '';
+    const postedAtValue =
+        sourceJob.createdDate ??
+        sourceJob.postedAtTimestamp ??
+        sourceJob.postedAt ??
+        sourceJob.postedDate ??
+        sourceJob.publishedAt ??
+        sourceJob.createdAt;
+    const postedAt =
+        parsePostedAt(postedAtValue, '+05:30') ??
+        parseRelativePostedAt(postedAtValue, Date.parse(scrapedAt)) ??
+        parseRelativePostedAt(sourceJob.postedAtRelative ?? sourceJob.postedDateRelative, Date.parse(scrapedAt));
+    const applyUrl = [sourceJob.jdURL, sourceJob.applyUrl, sourceJob.jobUrl, sourceJob.url]
+        .find((url) => typeof url === 'string' && url.trim())
+        ?.trim() ?? '';
     const location = cleanText(Array.isArray(sourceJob.location) ? sourceJob.location.join(', ') : sourceJob.location);
     const company = cleanText(sourceJob.companyName ?? sourceJob.company);
 

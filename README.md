@@ -2,11 +2,11 @@
 
 **TN India Job Collector** collects recent job listings from employer career feeds on Greenhouse and SmartRecruiters, plus LinkedIn and Naukri when enabled. It keeps records with a reliable posting timestamp from the previous 24 hours, removes likely duplicates, and places Tamil Nadu roles first. Run it on the [Apify platform](https://apify.com/) to access the dataset, API, schedules, integrations, run monitoring, and Blogger-ready HTML output.
 
-The LinkedIn and Naukri integrations use the community Actors `curious_coder/linkedin-jobs-scraper` and `muhammetakkurtt/naukri-job-scraper`. Each enabled portal starts one India-wide child run. These are paid per-result services; review their current Store pricing and test with small limits before scheduling regular runs.
+The LinkedIn and Naukri integrations use the community Actors `curious_coder/linkedin-jobs-scraper` and `muhammetakkurtt/naukri-job-scraper`. Each enabled portal starts one child run focused on Chennai, Tamil Nadu. These are paid per-result services; review their current Store pricing and test with small limits before scheduling regular runs.
 
 ## Why use TN India Job Collector?
 
-Checking each career site manually takes time and makes it easy to miss new openings. This Actor brings supported sources into one dataset, prioritizes Tamil Nadu while retaining other India-wide results, and provides direct application links. It can help job seekers review new openings, publishers prepare daily job roundups, and teams monitor hiring trends.
+Checking each career site manually takes time and makes it easy to miss new openings. This Actor brings supported sources into one dataset, focuses portal searches on Chennai and Tamil Nadu, and provides direct application links. It can help job seekers review new openings, publishers prepare daily job roundups, and teams monitor hiring trends.
 
 Results depend on the configured companies, the community Actors’ coverage and limits, and the source sites’ availability. This is not a guarantee of every job posted online.
 
@@ -14,7 +14,7 @@ Results depend on the configured companies, the community Actors’ coverage and
 
 1. Open the Actor’s **Input** tab.
 2. Leave LinkedIn and Naukri enabled for portal searches, or disable either source to avoid its Store Actor call.
-3. Optionally enter a role keyword. Leave it empty for a broad India-wide search.
+3. Optionally enter a role keyword. Leave it empty to search Chennai roles across the configured Software/IT and Data/AI job-title filters.
 4. Keep the external search cap at 10 for an initial cost test.
 5. Add Greenhouse board tokens or SmartRecruiters company identifiers if you also want employer-feed results.
 6. Start a run and inspect the dataset and logs. Only listings with a reliable timestamp in the last 24 hours are kept.
@@ -27,15 +27,15 @@ Use the **Input** tab to configure:
 | Input | Purpose |
 | --- | --- |
 | `enableLinkedInJobs` / `enableNaukriJobs` | Enable or disable each paid community Actor; both are enabled by default. |
-| `maxExternalJobsPerSearch` | Maximum requested results from each enabled portal, from 1 to 50. Each portal runs one India-wide search. The default 10 is intended for cost-controlled testing. |
+| `maxExternalJobsPerSearch` | Maximum requested results from each enabled portal, from 1 to 50. Each portal runs one Chennai search. The default 10 is intended for cost-controlled testing. |
 | `maxExternalChargePerSearchUsd` | Maximum event charge passed to each paid child run. Naukri requires at least $0.10 per run; with both portals enabled the configured caps can total $0.20. |
 | `externalSearchKeyword` | Optional single role or keyword passed to LinkedIn and Naukri to narrow their searches. |
 | `greenhouseBoards` / `smartRecruitersCompanies` | Optional company boards or identifiers for employer feeds. |
-| `targetLocations` | Location substrings used for filtering. The default includes `India`, so it retains India-wide matches; Tamil Nadu locations are ordered first. |
+| `targetLocations` | Location substrings used for filtering. The default targets Tamil Nadu and Chennai. |
 | `keywords` | Defaults to the agreed Software/IT and Data/AI role list. Filters job titles and locations after scraping; clear or edit it to change which results are saved. It does not reduce child Actor charges. |
 | `maxJobsPerBoard` | Per-company cap for Greenhouse and SmartRecruiters. |
 
-Each enabled portal receives one India-wide search, reducing duplicate searches and child-run charges. The default role filter covers Software/IT and Data/AI titles; use `externalSearchKeyword` to narrow the portal query to one role, or edit/clear `keywords` to change the final title filter. The collector prioritizes Tamil Nadu results and deduplicates overlapping postings before saving them. LinkedIn's relative posting time is used when an exact timestamp is unavailable; listings with no usable timestamp are excluded because they cannot be verified as posted within the exact 24-hour window.
+Each enabled portal receives one Chennai search, reducing duplicate searches and child-run charges. The default role filter covers Software/IT and Data/AI titles; use `externalSearchKeyword` to narrow the portal query to one role, or edit/clear `keywords` to change the final title filter. The collector deduplicates overlapping postings before saving them. Relative posting dates are parsed when supported; jobs without a usable date or outside the last 24 hours are excluded.
 
 ## Output
 
@@ -84,7 +84,7 @@ The result limit applies once per enabled portal, and is passed as both the chil
 - Start with a low external result limit and disable a portal if you want to compare source quality and charges.
 - Set `externalSearchKeyword` to a role such as `software engineer` to narrow LinkedIn and Naukri searches. This is the best way to reduce broad, less relevant LinkedIn results.
 - The default `keywords` list filters saved job titles to Software/IT and Data/AI roles after collection. This improves relevance, but only `externalSearchKeyword` and the child result limit affect the portal search itself.
-- Tamil Nadu listings sort before other India locations; the dataset is still India-wide.
+- Portal searches target Chennai, Tamil Nadu. Greenhouse and SmartRecruiters results are limited by the configured target locations.
 - LinkedIn's date filter and Naukri's one-day freshness filter are supplemented by a strict timestamp check. LinkedIn relative timestamps are interpreted relative to collection time; Naukri local timestamps are interpreted as India Standard Time.
 - Greenhouse does not always provide a true posting timestamp. Such records are excluded rather than using an update timestamp as a posting date.
 - The Actor prepares HTML but does not publish to Blogger. Publishing requires a separate integration and credentials.

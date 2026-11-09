@@ -79,6 +79,17 @@ describe('job normalization and selection', () => {
         });
     });
 
+    it('uses alternate or relative Naukri posting dates', () => {
+        const scrapedAt = '2026-11-07T12:00:00.000Z';
+
+        expect(normalizeNaukriJob({ postedDate: '2026-11-07 15:30:00' }, scrapedAt).posted_at).toBe(
+            '2026-11-07T10:00:00.000Z',
+        );
+        expect(normalizeNaukriJob({ createdDate: '2 hours ago' }, scrapedAt).posted_at).toBe(
+            '2026-11-07T10:00:00.000Z',
+        );
+    });
+
     it('does not replace a missing LinkedIn URL when the job ID is not numeric', () => {
         expect(normalizeLinkedInJob({ id: 'not-a-numeric-id' }).apply_url).toBe('');
     });

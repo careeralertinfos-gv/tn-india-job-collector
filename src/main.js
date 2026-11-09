@@ -113,14 +113,13 @@ function smartRecruitersDescription(jobDetails) {
         .join(' ');
 }
 
-function isRelevantJob(title, location, targetLocations, keywords, collectAllLocations, sourceSearchIsIndiaWide = false) {
+function isRelevantJob(title, location, targetLocations, keywords, collectAllLocations) {
     const matchesLocation = matchesAny(location, targetLocations);
-    const indiaIsTargeted = sourceSearchIsIndiaWide && matchesAny('India', targetLocations);
-    if (!collectAllLocations && !matchesLocation && !indiaIsTargeted) {
+    if (!collectAllLocations && !matchesLocation) {
         return false;
     }
 
-    if (keywords.length && !matchesAny(`${title} ${location}`, keywords)) {
+    if (keywords.length && !matchesAny(title, keywords)) {
         return false;
     }
 
@@ -179,13 +178,6 @@ try {
     const targetLocations = input.targetLocations ?? [
         'Tamil Nadu',
         'Chennai',
-        'Coimbatore',
-        'Madurai',
-        'Tiruchirappalli',
-        'Hosur',
-        'Salem',
-        'Tirunelveli',
-        'India',
     ];
     const keywords = input.keywords ?? DEFAULT_ROLE_KEYWORDS;
     const maxJobsPerBoard = input.maxJobsPerBoard ?? 25;
@@ -383,7 +375,7 @@ try {
     if (enableLinkedInJobs) {
         const linkedinInput = {
             keywords: searchKeyword || undefined,
-            location: 'India',
+            location: 'Chennai, Tamil Nadu, India',
             datePosted: 'past24Hours',
             autoConvertToAiSearch: true,
             scrapeCompany: false,
@@ -391,7 +383,7 @@ try {
             splitByLocation: false,
         };
         externalSearches.push({
-            label: 'LinkedIn - India',
+            label: 'LinkedIn - Chennai, Tamil Nadu',
             actorId: 'curious_coder/linkedin-jobs-scraper',
             input: linkedinInput,
             normalize: normalizeLinkedInJob,
@@ -400,17 +392,17 @@ try {
 
     if (enableNaukriJobs) {
         const keywordSlug = searchKeyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const indiaSearchUrl = `https://www.naukri.com/${keywordSlug ? `${keywordSlug}-` : ''}jobs-in-india`;
+        const chennaiSearchUrl = `https://www.naukri.com/${keywordSlug ? `${keywordSlug}-` : ''}jobs-in-chennai`;
         const naukriInput = {
             jobBoard: 'naukri',
             maxJobs: maxExternalJobsPerSearch,
             freshness: '1',
             sortBy: 'date',
             fetchDetails: false,
-            searchUrl: indiaSearchUrl,
+            searchUrl: chennaiSearchUrl,
         };
         externalSearches.push({
-            label: 'Naukri - India',
+            label: 'Naukri - Chennai, Tamil Nadu',
             actorId: 'muhammetakkurtt/naukri-job-scraper',
             input: naukriInput,
             normalize: normalizeNaukriJob,
@@ -444,16 +436,10 @@ try {
     const recentJobs = collectedJobs.filter((job) =>
         isPostedWithinLast24Hours(job.posted_at, collectionStartedAt),
     );
-    const relevantJobs = recentJobs.filter((job) =>
-        isRelevantJob(
-            job.title,
-            job.location,
-            targetLocations,
-            keywords,
-            collectAllLocations,
-            job.source_name === 'LinkedIn' || job.source_name === 'Naukri',
-        ),
+    const locationMatchedJobs = recentJobs.filter((job) =>
+        isRelevantJob(job.title, job.location, targetLocations, [], collectAllLocations),
     );
+    const relevantJobs = locationMatchedJobs.filter((job) => matchesAny(job.title, keywords));
     const prioritizedJobs = deduplicateAndPrioritizeJobs(relevantJobs);
 
     for (const job of prioritizedJobs) {
@@ -463,8 +449,21 @@ try {
 
     const missingPostingDates = collectedJobs.filter((job) => !job.posted_at).length;
     const tamilNaduJobs = prioritizedJobs.filter((job) => isTamilNaduLocation(job.location)).length;
+    const withoutRecentPostDate = collectedJobs.length - recentJobs.length;
+    const outsideTargetLocations = recentJobs.length - locationMatchedJobs.length;
+    const outsideRoleKeywords = locationMatchedJobs.length - relevantJobs.length;
     if (missingPostingDates) {
         log.warning(`Excluded ${missingPostingDates} jobs without a reliable posting timestamp from the 24-hour results.`);
+    }
+    if (externalSearches.length && externalResults.some((result) => result.status === 'rejected')) {
+        log.warning('One or more external searches failed; check the error logs above for the affected portal and child run.');
+    }
+    if (collectedJobs.length && !prioritizedJobs.length) {
+        log.warning(
+            `No jobs passed final filters: ${withoutRecentPostDate} were outside the 24-hour window or lacked a usable date, ${outsideTargetLocations} did not match target locations, and ${outsideRoleKeywords} did not match role keywords.`,
+        );
+    } else if (!collectedJobs.length) {
+        log.warning('No jobs were returned by the configured sources. Check the child Actor run logs and confirm each source is enabled.');
     }
     log.info(
         `Collected ${prioritizedJobs.length} unique jobs posted in the last 24 hours (${tamilNaduJobs} Tamil Nadu, ${prioritizedJobs.length - tamilNaduJobs} other India locations); Tamil Nadu jobs are listed first.`,
