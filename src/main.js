@@ -10,6 +10,39 @@ import {
 
 await Actor.init();
 
+const DEFAULT_ROLE_KEYWORDS = [
+    'software engineer',
+    'software developer',
+    'backend developer',
+    'backend engineer',
+    'frontend developer',
+    'frontend engineer',
+    'full stack developer',
+    'full-stack developer',
+    'java developer',
+    'python developer',
+    '.net developer',
+    'mobile developer',
+    'android developer',
+    'ios developer',
+    'qa automation',
+    'devops',
+    'cloud engineer',
+    'it support',
+    'application support',
+    'data analyst',
+    'bi analyst',
+    'business intelligence',
+    'bi developer',
+    'data engineer',
+    'analytics engineer',
+    'data scientist',
+    'machine learning engineer',
+    'ai engineer',
+    'generative ai',
+    'mlops',
+];
+
 function cleanText(value = '') {
     return String(value ?? '')
         .replace(/&lt;/gi, '<')
@@ -141,7 +174,7 @@ try {
     const enableNaukriJobs = input.enableNaukriJobs !== false;
     const externalSearchKeyword = input.externalSearchKeyword?.trim() ?? '';
     const maxExternalJobsPerSearch = input.maxExternalJobsPerSearch ?? 10;
-    const maxExternalChargePerSearchUsd = input.maxExternalChargePerSearchUsd ?? 0.02;
+    const maxExternalChargePerSearchUsd = input.maxExternalChargePerSearchUsd ?? 0.1;
     const collectionStartedAt = Date.now();
     const targetLocations = input.targetLocations ?? [
         'Tamil Nadu',
@@ -154,7 +187,7 @@ try {
         'Tirunelveli',
         'India',
     ];
-    const keywords = input.keywords ?? [];
+    const keywords = input.keywords ?? DEFAULT_ROLE_KEYWORDS;
     const maxJobsPerBoard = input.maxJobsPerBoard ?? 25;
     const collectAllLocations = input.collectAllLocations === true;
 
@@ -348,49 +381,40 @@ try {
     const externalSearches = [];
 
     if (enableLinkedInJobs) {
-        for (const location of ['Tamil Nadu', 'India']) {
-            const linkedinInput = {
-                keywords: searchKeyword || undefined,
-                location,
-                datePosted: 'past24Hours',
-                autoConvertToAiSearch: true,
-                scrapeCompany: false,
-                limitPerSource: maxExternalJobsPerSearch,
-                splitByLocation: false,
-            };
-            externalSearches.push({
-                label: `LinkedIn - ${location}`,
-                actorId: 'curious_coder/linkedin-jobs-scraper',
-                input: linkedinInput,
-                normalize: normalizeLinkedInJob,
-            });
-        }
+        const linkedinInput = {
+            keywords: searchKeyword || undefined,
+            location: 'India',
+            datePosted: 'past24Hours',
+            autoConvertToAiSearch: true,
+            scrapeCompany: false,
+            limitPerSource: maxExternalJobsPerSearch,
+            splitByLocation: false,
+        };
+        externalSearches.push({
+            label: 'LinkedIn - India',
+            actorId: 'curious_coder/linkedin-jobs-scraper',
+            input: linkedinInput,
+            normalize: normalizeLinkedInJob,
+        });
     }
 
     if (enableNaukriJobs) {
         const keywordSlug = searchKeyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const tamilNaduSearchUrl = `https://www.naukri.com/${keywordSlug ? `${keywordSlug}-` : ''}jobs-in-tamil-nadu`;
         const indiaSearchUrl = `https://www.naukri.com/${keywordSlug ? `${keywordSlug}-` : ''}jobs-in-india`;
-
-        for (const search of [
-            { name: 'Tamil Nadu', searchUrl: tamilNaduSearchUrl },
-            { name: 'India', searchUrl: indiaSearchUrl },
-        ]) {
-            const naukriInput = {
-                jobBoard: 'naukri',
-                maxJobs: Math.max(50, maxExternalJobsPerSearch),
-                freshness: '1',
-                sortBy: 'date',
-                fetchDetails: false,
-                searchUrl: search.searchUrl,
-            };
-            externalSearches.push({
-                label: `Naukri - ${search.name}`,
-                actorId: 'muhammetakkurtt/naukri-job-scraper',
-                input: naukriInput,
-                normalize: normalizeNaukriJob,
-            });
-        }
+        const naukriInput = {
+            jobBoard: 'naukri',
+            maxJobs: maxExternalJobsPerSearch,
+            freshness: '1',
+            sortBy: 'date',
+            fetchDetails: false,
+            searchUrl: indiaSearchUrl,
+        };
+        externalSearches.push({
+            label: 'Naukri - India',
+            actorId: 'muhammetakkurtt/naukri-job-scraper',
+            input: naukriInput,
+            normalize: normalizeNaukriJob,
+        });
     }
 
     const externalResults = await Promise.allSettled(

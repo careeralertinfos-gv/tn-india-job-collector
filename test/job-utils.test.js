@@ -70,6 +70,19 @@ describe('job normalization and selection', () => {
         });
     });
 
+    it('builds a LinkedIn job URL from its numeric ID when the scraper omits a URL', () => {
+        expect(normalizeLinkedInJob({ id: 'urn:li:jobPosting:12345' })).toMatchObject({
+            job_key: 'linkedin:urn:li:jobPosting:12345',
+            source_job_id: 'urn:li:jobPosting:12345',
+            apply_url: 'https://www.linkedin.com/jobs/view/12345/',
+            source_url: 'https://www.linkedin.com/jobs/view/12345/',
+        });
+    });
+
+    it('does not replace a missing LinkedIn URL when the job ID is not numeric', () => {
+        expect(normalizeLinkedInJob({ id: 'not-a-numeric-id' }).apply_url).toBe('');
+    });
+
     it('deduplicates equivalent roles and puts Tamil Nadu results first', () => {
         const jobs = [
             {

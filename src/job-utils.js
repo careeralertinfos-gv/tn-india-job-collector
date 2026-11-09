@@ -93,16 +93,22 @@ function getRemoteStatus(location, explicitRemote, workplaceTypes = []) {
 }
 
 export function normalizeLinkedInJob(sourceJob, scrapedAt = new Date().toISOString()) {
-    const jobId = sourceJob.id ?? sourceJob.jobId;
+    const rawJobId = sourceJob.id ?? sourceJob.jobId ?? sourceJob.jobPostingId;
+    const jobId = rawJobId == null ? '' : String(rawJobId).trim();
+    const linkedInNumericId = jobId.match(/^(?:urn:li:jobPosting:)?(\d+)$/)?.[1];
     const postedAt =
         parsePostedAt(sourceJob.postedAtTimestamp ?? sourceJob.postedAt) ??
         parseRelativePostedAt(sourceJob.postedAtRelative, Date.parse(scrapedAt));
-    const applyUrl = sourceJob.link ?? sourceJob.applyUrl ?? '';
+    const applyUrl =
+        [sourceJob.link, sourceJob.applyUrl, sourceJob.jobUrl, sourceJob.url]
+            .find((url) => typeof url === 'string' && url.trim())
+            ?.trim() ??
+        (linkedInNumericId ? `https://www.linkedin.com/jobs/view/${linkedInNumericId}/` : '');
     const location = cleanText(sourceJob.location);
     const company = cleanText(sourceJob.companyName ?? sourceJob.company);
 
     return {
-        job_key: `linkedin:${jobId ?? applyUrl}`,
+        job_key: `linkedin:${jobId || applyUrl}`,
         title: cleanText(sourceJob.title),
         company,
         location,
@@ -117,7 +123,7 @@ export function normalizeLinkedInJob(sourceJob, scrapedAt = new Date().toISOStri
         source_url: applyUrl,
         source_name: 'LinkedIn',
         source_type: 'Job board',
-        source_job_id: jobId == null ? '' : String(jobId),
+        source_job_id: jobId,
         source_updated_at: postedAt,
         posted_at: postedAt,
         scraped_at: scrapedAt,
