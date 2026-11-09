@@ -27,7 +27,7 @@ Use the **Input** tab to configure:
 | Input | Purpose |
 | --- | --- |
 | `enableLinkedInJobs` / `enableNaukriJobs` | Enable or disable each paid community Actor; both are enabled by default. |
-| `maxExternalJobsPerSearch` | Maximum requested results from each enabled portal, from 1 to 50. Each portal runs one Chennai search. The default 10 is intended for cost-controlled testing. |
+| `maxExternalJobsPerSearch` | Maximum results imported from each enabled portal, from 1 to 50. Each portal runs one Chennai search. Naukri requires a minimum child input of 50 jobs, but the collector imports only this configured limit. The default 10 is intended for cost-controlled testing. |
 | `maxExternalChargePerSearchUsd` | Maximum event charge passed to each paid child run. Naukri requires at least $0.10 per run; with both portals enabled the configured caps can total $0.20. |
 | `externalSearchKeyword` | Optional single role or keyword passed to LinkedIn and Naukri to narrow their searches. |
 | `greenhouseBoards` / `smartRecruitersCompanies` | Optional company boards or identifiers for employer feeds. |
@@ -77,7 +77,7 @@ If the LinkedIn source omits an application URL but includes a numeric LinkedIn 
 
 LinkedIn and Naukri are paid per-result Actors. At the listed starting rates checked during setup, 10 results from each portal would be approximately **$0.018** in result charges (10 LinkedIn results at $1.00/1,000 plus 10 Naukri results at $0.80/1,000). Actual charges can differ by Store pricing, discounts, results returned, and platform usage. Check both Actors’ current Pricing tabs before running them.
 
-The result limit applies once per enabled portal, and is passed as both the child Actor's input limit and its Apify `maxItems` cap. A per-child-run `maxTotalChargeUsd` limit is also sent to Apify. Naukri requires a minimum $0.10 event-charge cap per child run; with both portals enabled, the two configured caps can total up to $0.20 per parent run, excluding any platform usage charges. Actual pay-per-event costs depend on returned results and can be lower than the cap. Begin with 10 and inspect the completed runs and billing before increasing it or creating a daily schedule. Direct Greenhouse and SmartRecruiters API calls are separate from the community Actor result fees.
+The result limit applies once per enabled portal and caps how many results the parent imports; it is also passed as Apify's `maxItems` cap. Naukri rejects child input limits below 50, so the child may fetch more jobs than the parent imports. A per-child-run `maxTotalChargeUsd` limit is also sent to Apify. Naukri requires a minimum $0.10 event-charge cap per child run; with both portals enabled, the two configured caps can total up to $0.20 per parent run, excluding any platform usage charges. Actual pay-per-event costs depend on returned results and can be lower than the cap. Begin with 10 and inspect the completed runs and billing before increasing it or creating a daily schedule. Direct Greenhouse and SmartRecruiters API calls are separate from the community Actor result fees.
 
 ## Tips or Advanced options
 

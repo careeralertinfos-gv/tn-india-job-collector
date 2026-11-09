@@ -27,7 +27,7 @@
         "maxExternalJobsPerSearch": {
             "title": "Maximum external jobs per search",
             "type": "integer",
-            "description": "Maximum results requested from each enabled paid Store Actor. One Chennai search is run per enabled Actor.",
+            "description": "Maximum results imported from each enabled paid Store Actor. Naukri requires a minimum child input of 50 jobs; the collector still imports only this configured limit.",
             "default": 10,
             "minimum": 1,
             "maximum": 50

@@ -395,7 +395,7 @@ try {
         const chennaiSearchUrl = `https://www.naukri.com/${keywordSlug ? `${keywordSlug}-` : ''}jobs-in-chennai`;
         const naukriInput = {
             jobBoard: 'naukri',
-            maxJobs: maxExternalJobsPerSearch,
+            maxJobs: Math.max(50, maxExternalJobsPerSearch),
             freshness: '1',
             sortBy: 'date',
             fetchDetails: false,
@@ -458,9 +458,9 @@ try {
     if (externalSearches.length && externalResults.some((result) => result.status === 'rejected')) {
         log.warning('One or more external searches failed; check the error logs above for the affected portal and child run.');
     }
-    if (collectedJobs.length && !prioritizedJobs.length) {
+    if (collectedJobs.length) {
         log.warning(
-            `No jobs passed final filters: ${withoutRecentPostDate} were outside the 24-hour window or lacked a usable date, ${outsideTargetLocations} did not match target locations, and ${outsideRoleKeywords} did not match role keywords.`,
+            `Job filter summary: ${collectedJobs.length} collected; ${withoutRecentPostDate} outside the 24-hour window or missing a usable date; ${outsideTargetLocations} outside target locations; ${outsideRoleKeywords} outside role keywords; ${prioritizedJobs.length} unique jobs kept.`,
         );
     } else if (!collectedJobs.length) {
         log.warning('No jobs were returned by the configured sources. Check the child Actor run logs and confirm each source is enabled.');
